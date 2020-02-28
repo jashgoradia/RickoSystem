@@ -27,7 +27,7 @@ public class CreateTables {
                 + "    user_id integer NOT NULL,\n"
                 + "    item_id integer NOT NULL,\n"
                 + "    rating real NOT NULL,\n"
-                + "    time_stamp datetime NOT NULL\n"
+                + "    time_stamp integer NOT NULL\n"
                 + ");";
 
         try (Connection conn = DriverManager.getConnection(url);
