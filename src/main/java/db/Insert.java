@@ -64,13 +64,13 @@ public class Insert {
                     conn.commit();
                     counter = 0;
                 }
-
             }
             if(counter!=0){
                 int[] count = pstmt.executeBatch();
                 conn.commit();
             }
-//            conn.commit();
+           /* int[] count = pstmt.executeBatch();
+            conn.commit();*/
             br.close();
 
         } catch (SQLException e) {
