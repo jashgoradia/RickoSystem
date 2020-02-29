@@ -17,7 +17,7 @@ public class Insert {
      *
      * @return the Connection object
      */
-    /*private Connection connect() {
+    private Connection connect() {
         // SQLite connection string
         String cwd = new File("").getAbsolutePath();
         String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208.db";
@@ -28,7 +28,7 @@ public class Insert {
             System.out.println(e.getMessage());
         }
         return conn;
-    }*/
+    }
 
 
     public void insert() throws IOException{
@@ -40,8 +40,9 @@ public class Insert {
 
         String sql = "INSERT INTO training_dataset(user_id,item_id,rating,time_stamp) VALUES(?,?,?,?)";
 
-        try (Connection conn = DriverManager.getConnection(url);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try {
+            Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
             conn.setAutoCommit(false);
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
             int counter = 0;
@@ -50,20 +51,25 @@ public class Insert {
                 String[] values = line.split(",");
                 pstmt.setInt(1, Integer.parseInt(values[0]));
                 pstmt.setInt(2, Integer.parseInt(values[1]));
-                if(values[2].equals("rating")){
-                    values[2] = String.valueOf(0);
+                try {
+                    pstmt.setFloat(3, Float.parseFloat(values[2]));
+                } catch (Exception e){
+                    System.out.println(e.getMessage());
                 }
-                else pstmt.setFloat(3, Float.parseFloat(values[2]));
                 pstmt.setInt(4, Integer.parseInt(values[3]));
                 counter++;
                 pstmt.addBatch();
                 if(counter%1000==0){
                     int[] count = pstmt.executeBatch();
                     conn.commit();
+                    counter = 0;
                 }
 
             }
-
+            if(counter!=0){
+                int[] count = pstmt.executeBatch();
+                conn.commit();
+            }
 //            conn.commit();
             br.close();
 
