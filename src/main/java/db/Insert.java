@@ -11,7 +11,7 @@ import java.io.*;
  * @author sqlitetutorial.net
  */
 public class Insert {
-
+    String cwd = new File("").getAbsolutePath();
     /**
      * Connect to the test.db database
      *
@@ -19,7 +19,7 @@ public class Insert {
      */
     private Connection connect() {
         // SQLite connection string
-        String cwd = new File("").getAbsolutePath();
+        //String cwd = new File("").getAbsolutePath();
         String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208.db";
         Connection conn = null;
         try {
@@ -33,8 +33,8 @@ public class Insert {
 
     public void insert() throws IOException{
 
-        String cwd = new File("").getAbsolutePath();
-        String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208.db";
+        //String cwd = new File("").getAbsolutePath();
+        //String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208.db";
         String csvFile = cwd + "/sqlite/dataset/comp3208-train.csv";
         String line;
 

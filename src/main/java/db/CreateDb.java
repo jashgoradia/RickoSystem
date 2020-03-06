@@ -33,11 +33,9 @@ public class CreateDb {
             System.out.println(e.getMessage());
         }
     }
-
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-        createNewDatabase("comp3208.db");
+    public static void main(String[] args) { createNewDatabase("comp3208.db");
     }
 }
