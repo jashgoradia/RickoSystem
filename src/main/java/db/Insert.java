@@ -59,18 +59,18 @@ public class Insert {
                 pstmt.setInt(4, Integer.parseInt(values[3]));
                 counter++;
                 pstmt.addBatch();
-                if(counter%1000==0){
+               /* if(counter%1000==0){
                     int[] count = pstmt.executeBatch();
                     conn.commit();
                     counter = 0;
-                }
+                }*/
             }
-            if(counter!=0){
+            /*if(counter!=0){
                 int[] count = pstmt.executeBatch();
                 conn.commit();
-            }
-           /* int[] count = pstmt.executeBatch();
-            conn.commit();*/
+            }*/
+            int[] count = pstmt.executeBatch();
+            conn.commit();
             br.close();
 
         } catch (SQLException e) {
