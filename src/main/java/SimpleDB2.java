@@ -1,4 +1,9 @@
+import com.opencsv.CSVWriter;
+
+import javax.swing.plaf.nimbus.State;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -26,7 +31,7 @@ public class SimpleDB2 {
      * The data is stored in a HashMap, which allows fast access.
      */
     private HashMap<Integer, HashMap<Integer,Float>>itemBased;
-    private HashMap<Integer,Float>avgRating;
+    private HashMap<Integer,Float>avgRating = new HashMap<>();
     //private HashMap<Integer, Float>avgRating;
 
     /**
@@ -55,15 +60,6 @@ public class SimpleDB2 {
         try(Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql)){
 
-            //create prepared statement
-
-
-            //set paramter value in SQL statement
-            //pstmt.setString(1,trainingset_tablename);
-
-            //store results of query
-
-
             itemBased = new HashMap<>();
 
             //loop through result set
@@ -86,18 +82,6 @@ public class SimpleDB2 {
                 //userRatings.put(rating,time_stamp);
                 itemRatings.put(user, rating);
                 count++;
-
-                //if(avgRating.get(user).equals(null)){
-                    String sql1 = "SELECT AVG(rating) FROM training_dataset WHERE user_id= "+ user;
-                    Statement stmt1 = conn.createStatement();
-                    ResultSet rs1 = stmt1.executeQuery(sql1);
-
-                    if(rs1 != null)
-                        avgRating.put(user,rs1.getFloat(1));
-                    else
-                        avgRating.put(user,0.0f);
-                //}
-
             }
             /* Don't think this is needed
                 // don't forget to dispose any prepared statements
@@ -109,24 +93,50 @@ public class SimpleDB2 {
         }
     }
 
-    /*public int itemCount() {
-        String sql = "SELECT COUNT(DISTINCT item_id) FROM training_dataset";
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-           return (rs.getInt(1));
-        } catch (SQLException e) {
+    public void getAvgRating(){
+        System.out.println("Calculating average rating");
+        String sql = "SELECT user_id, AVG(rating) FROM training_dataset GROUP BY user_id";
+        try(Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)){
+            int count = 0;
+            while(rs.next()){
+                try {
+                    avgRating.put(rs.getInt(1), rs.getFloat(2));
+                } catch (NullPointerException e){
+                    count++;
+                    System.out.println(count);
+                }
+            }
+
+        } catch (SQLException e){
             System.out.println(e.getMessage());
-            return 0;
         }
-    }*/
+        System.out.println("Average rating done");
+    }
 
     public void simMatrix(){
+        System.out.println("Calculating sim matrix");
         List<Integer> items = new ArrayList<>(itemBased.keySet());
-        for (int i = 0; i<items.size(); i++){
-            for (int j = i+1; j<items.size(); j++){
-                System.out.println(cosineSimilarity(items.get(i),items.get(j)));
+        File file = new File(cwd+"/sqlite/dataset/simMatrix.csv");
+        try {
+            FileWriter outputfile = new FileWriter(file);
+            CSVWriter writer = new CSVWriter(outputfile);
+
+            List<String[]> data = new ArrayList<>();
+
+            for (int i = 0; i < items.size(); i++) {
+                for (int j = i + 1; j < items.size(); j++) {
+                    //System.out.println(cosineSimilarity(items.get(i),items.get(j)));
+                    int item1 = items.get(i);
+                    int item2 = items.get(j);
+                    float res = cosineSimilarity(item1,item2);
+                    data.add(new String[]{String.valueOf(item1),String.valueOf(item2),String.valueOf(res)});
+                }
+                writer.writeAll(data);
+                System.out.println("Writing to file");
             }
-            System.out.println();
+        } catch(IOException e){
+            e.printStackTrace();
         }
 
     }
@@ -166,10 +176,8 @@ public class SimpleDB2 {
     public static void main (String[] args) {
         SimpleDB2 sdb = new SimpleDB2();
         sdb.loadRatings();
-        //sdb.simMatrix();
-        //System.out.println(sdb.avgRating(2943));
-        //sdb.loadRatings();
-        //System.out.println(sdb.itemCount());
+        sdb.getAvgRating();
+        sdb.simMatrix();
 
     }
 }
