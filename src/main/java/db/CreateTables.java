@@ -44,7 +44,7 @@ public class CreateTables {
 
         // SQL statement for creating a new table
         String sql = "CREATE TABLE sim_matrix (\n"
-                //+ "    id INTEGER PRIMARY KEY,\n"
+                + "    id INTEGER PRIMARY KEY,\n"
                 + "    item1 integer NOT NULL,\n"
                 + "    item2 integer NOT NULL,\n"
                 + "    sim real \n"
@@ -56,6 +56,7 @@ public class CreateTables {
             // create a new table
             stmt.execute("DROP TABLE IF EXISTS sim_matrix;");
             stmt.execute(sql);
+            stmt.close();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }

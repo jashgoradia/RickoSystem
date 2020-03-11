@@ -96,11 +96,6 @@ public class test {
         HashSet<Integer> user_set1 = new HashSet<Integer>(itemBased.get(item1).keySet());
         //intersection.retainAll(itemBased.get(item2).keySet());
 
-        Iterator<Integer> i = user_set1.iterator();
-        while (i.hasNext()) {
-            System.out.println(i.next());
-        }
-
         double result = 0.0;
         for(int user: user_set1){
             if(itemBased.get(item2).keySet().contains(user)) {
