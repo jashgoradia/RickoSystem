@@ -204,8 +204,8 @@ public class SimpleDB2 {
             if(sorted.get(item2).keySet().contains(user)) {
                 //ratings.put(itemBased.get(item1).get(user),itemBased.get(item2).get(user));
                 double avg_rating = avgRating.get(user);
-                double item1_rating = itemBased.get(item1).get(user);
-                double item2_rating = itemBased.get(item2).get(user);
+                double item1_rating = sorted.get(item1).get(user);
+                double item2_rating = sorted.get(item2).get(user);
 
                 numerator += ((item1_rating - avg_rating) * (item2_rating - avg_rating));
                 denominator_left += Math.pow((item1_rating - avg_rating), 2);
