@@ -123,7 +123,7 @@ public class SimpleDB2 {
     public void simMatrix(){
         System.out.println("Calculating sim matrix");
         CreateTables ct = new CreateTables();
-        ct.createSimTable();
+        //ct.createSimTable();
         //List<Integer> items = new ArrayList<>(itemBased.keySet());
 
         String sql = "INSERT INTO sim_matrix(item1,item2,sim) VALUES(?,?,?)";
@@ -135,8 +135,11 @@ public class SimpleDB2 {
             int counter = 0;
             //List<String[]> lines = new ArrayList<>();
 
-            for (int i = 1; i < 53890; i++) {
+            for (int i = 6846; i < 53890; i++) {
                 for (int j = i + 1; j <= 53890; j++) {
+                    if(i==6846&&j<=65251){
+                        continue;
+                    }
                     if(itemBased.containsKey(i)&&itemBased.containsKey(j)) {
                         double res = cosineSimilarity(i, j);
                         res = Math.round(res * 100.0) / 100.0;
@@ -150,16 +153,20 @@ public class SimpleDB2 {
                             pstmt.addBatch();
                             counter++;
 
-                            if (counter == 1000) {
+                            if (counter == 10000) {
                                 pstmt.executeBatch();
                                 conn.commit();
                                 counter = 0;
-                                System.out.println("Writing");
+                                //System.out.println("Writing");
                             }
                         }
                     }
+                    else{
+                        continue;
+                    }
                 }
                 System.out.println(i);
+                itemBased.remove(i);
             }
             if(counter!=0){
                 int[] count = pstmt.executeBatch();
@@ -179,30 +186,26 @@ public class SimpleDB2 {
         double denominator_left = 0.0;
         double denominator_right = 0.0;
 
-        HashSet<Integer> intersection = new HashSet<Integer>(itemBased.get(item1).keySet());
-        intersection.retainAll(itemBased.get(item2).keySet());
+        HashSet<Integer> user_set1 = new HashSet<Integer>(itemBased.get(item1).keySet());
+        //intersection.retainAll(itemBased.get(item2).keySet());
+        double result = 0.0;
+        for(int user: user_set1){
+            if(itemBased.get(item2).containsValue(user)) {
+                    //ratings.put(itemBased.get(item1).get(user),itemBased.get(item2).get(user));
+                    double avg_rating = avgRating.get(user);
+                    double item1_rating = itemBased.get(item1).get(user);
+                    double item2_rating = itemBased.get(item2).get(user);
 
-        if(!(intersection.size()==0)) {
-
-            for (int user : intersection) {
-                //ratings.put(itemBased.get(item1).get(user),itemBased.get(item2).get(user));
-                double avg_rating = avgRating.get(user);
-                double item1_rating = itemBased.get(item1).get(user);
-                double item2_rating = itemBased.get(item2).get(user);
-
-                numerator += ((item1_rating - avg_rating) * (item2_rating - avg_rating));
-                denominator_left += Math.pow((item1_rating - avg_rating), 2);
-                denominator_right += Math.pow((item2_rating - avg_rating), 2);
+                    numerator += ((item1_rating - avg_rating) * (item2_rating - avg_rating));
+                    denominator_left += Math.pow((item1_rating - avg_rating), 2);
+                    denominator_right += Math.pow((item2_rating - avg_rating), 2);
             }
             denominator_left = Math.sqrt(denominator_left);
             denominator_right = Math.sqrt(denominator_right);
 
-            return (numerator / (denominator_left * denominator_right));
+            result = (numerator / (denominator_left * denominator_right));
         }
-
-        else {
-            return 0.0;
-        }
+        return result;
     }
 
     public void addDb(List<String[]> lines){
