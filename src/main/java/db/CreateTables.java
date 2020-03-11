@@ -22,7 +22,7 @@ public class CreateTables {
     public void createNewTable() {
 
         // SQL statement for creating a new table
-        String sql = "CREATE TABLE IF NOT EXISTS training_dataset (\n"
+        String sql = "CREATE TABLE training_dataset (\n"
                 + "    id INTEGER PRIMARY KEY,\n"
                 + "    user_id integer NOT NULL,\n"
                 + "    item_id integer NOT NULL,\n"
@@ -33,6 +33,7 @@ public class CreateTables {
         try (Connection conn = DriverManager.getConnection(url);
              Statement stmt = conn.createStatement()) {
             // create a new table
+            stmt.execute("DROP TABLE IF EXISTS training_dataset");
             stmt.execute(sql);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -42,17 +43,18 @@ public class CreateTables {
     public void createSimTable(){
 
         // SQL statement for creating a new table
-        String sql = "CREATE TABLE IF NOT EXISTS sim_matrix (\n"
+        String sql = "CREATE TABLE sim_matrix (\n"
                 //+ "    id INTEGER PRIMARY KEY,\n"
                 + "    item1 integer NOT NULL,\n"
                 + "    item2 integer NOT NULL,\n"
-                + "    sim real NOT NULL\n"
+                + "    sim real \n"
                 //+ "    time_stamp integer NOT NULL\n"
                 + ");";
 
         try (Connection conn = DriverManager.getConnection(url);
              Statement stmt = conn.createStatement()) {
             // create a new table
+            stmt.execute("DROP TABLE IF EXISTS sim_matrix;");
             stmt.execute(sql);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -65,8 +67,8 @@ public class CreateTables {
     public static void main(String[] args) {
         //createNewTable();
         CreateTables ct = new CreateTables();
-        ct.createSimTable();
-        //ct.createNewTable();
+        //ct.createSimTable();
+        ct.createNewTable();
     }
 
 }

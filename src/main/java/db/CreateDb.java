@@ -1,5 +1,6 @@
 package db;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -36,6 +37,11 @@ public class CreateDb {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) { createNewDatabase("comp3208.db");
+    public static void main(String[] args) throws IOException {
+        createNewDatabase("comp3208.db");
+        CreateTables ct = new CreateTables();
+        ct.createNewTable();
+        Insert in = new Insert();
+        in.insert();
     }
 }

@@ -1,4 +1,7 @@
 import com.opencsv.CSVWriter;
+import db.CreateTables;
+import db.Insert;
+import org.sqlite.SQLiteException;
 
 import javax.swing.plaf.nimbus.State;
 import java.io.File;
@@ -25,7 +28,7 @@ public class SimpleDB2 {
     String cwd = new File("").getAbsolutePath();
     final String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
     final String trainingset_tablename = "training_dataset";
-    public Connection conn;
+    //public Connection conn;
     //private int nItems = itemCount();
     /**
      * The data is stored in a HashMap, which allows fast access.
@@ -37,11 +40,13 @@ public class SimpleDB2 {
     /**
      * Open an existing database.
      */
-    public SimpleDB2() {
+    public Connection connect() {
         try {
-            conn = DriverManager.getConnection(url);
+            Connection conn = DriverManager.getConnection(url);
+            return conn;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return null;
         }
     }
 
@@ -57,7 +62,8 @@ public class SimpleDB2 {
         System.out.println("Loading data from table " + trainingset_tablename);
         int count = 0;
         String sql = "SELECT user_id, item_id, rating FROM "+trainingset_tablename;
-        try(Statement stmt = conn.createStatement();
+        try(Connection conn = this.connect();
+            Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql)){
 
             itemBased = new HashMap<>();
@@ -96,7 +102,8 @@ public class SimpleDB2 {
     public void getAvgRating(){
         System.out.println("Calculating average rating");
         String sql = "SELECT user_id, AVG(rating) FROM training_dataset GROUP BY user_id";
-        try(Statement stmt = conn.createStatement();
+        try(Connection conn = this.connect();
+            Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql)){
             int count = 0;
             while(rs.next()){
@@ -107,7 +114,6 @@ public class SimpleDB2 {
                     System.out.println(count);
                 }
             }
-
         } catch (SQLException e){
             System.out.println(e.getMessage());
         }
@@ -116,68 +122,131 @@ public class SimpleDB2 {
 
     public void simMatrix(){
         System.out.println("Calculating sim matrix");
-        List<Integer> items = new ArrayList<>(itemBased.keySet());
-        File file = new File(cwd+"/sqlite/dataset/simMatrix.csv");
+        CreateTables ct = new CreateTables();
+        ct.createSimTable();
+        //List<Integer> items = new ArrayList<>(itemBased.keySet());
+
+        String sql = "INSERT INTO sim_matrix(item1,item2,sim) VALUES(?,?,?)";
+
         try {
-            FileWriter outputfile = new FileWriter(file);
-            CSVWriter writer = new CSVWriter(outputfile);
+            Connection conn = this.connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            conn.setAutoCommit(false);
+            int counter = 0;
+            //List<String[]> lines = new ArrayList<>();
 
-            List<String[]> data = new ArrayList<>();
+            for (int i = 1; i < 53890; i++) {
+                for (int j = i + 1; j <= 53890; j++) {
+                    if(itemBased.containsKey(i)&&itemBased.containsKey(j)) {
+                        double res = cosineSimilarity(i, j);
+                        res = Math.round(res * 100.0) / 100.0;
+                        if (res >= -1.00 && res <= 1.00 && res != 0.00) {
 
-            for (int i = 0; i < items.size(); i++) {
-                for (int j = i + 1; j < items.size(); j++) {
-                    //System.out.println(cosineSimilarity(items.get(i),items.get(j)));
-                    int item1 = items.get(i);
-                    int item2 = items.get(j);
-                    float res = cosineSimilarity(item1,item2);
-                    data.add(new String[]{String.valueOf(item1),String.valueOf(item2),String.valueOf(res)});
+                            //lines.add(new String[]{String.valueOf(item1),String.valueOf(item2),String.valueOf(res)});
+                            pstmt.setInt(1, i);
+                            pstmt.setInt(2, j);
+                            pstmt.setDouble(3, res);
+
+                            pstmt.addBatch();
+                            counter++;
+
+                            if (counter == 1000) {
+                                pstmt.executeBatch();
+                                conn.commit();
+                                counter = 0;
+                                System.out.println("Writing");
+                            }
+                        }
+                    }
                 }
-                writer.writeAll(data);
-                System.out.println("Writing to file");
+                System.out.println(i);
             }
-        } catch(IOException e){
+            if(counter!=0){
+                int[] count = pstmt.executeBatch();
+                conn.commit();
+            }
+            conn.setAutoCommit(true);
+            conn.close();
+        } catch(SQLException e){
             e.printStackTrace();
         }
 
     }
 
-    public float cosineSimilarity (int item1, int item2){
+    public double cosineSimilarity (int item1, int item2){
 
-        float numerator = 0.0f;
-        float denominator_left = 0.0f;
-        float denominator_right = 0.0f;
+        double numerator = 0.0;
+        double denominator_left = 0.0;
+        double denominator_right = 0.0;
 
         HashSet<Integer> intersection = new HashSet<Integer>(itemBased.get(item1).keySet());
         intersection.retainAll(itemBased.get(item2).keySet());
 
-        if(intersection!=null) {
+        if(!(intersection.size()==0)) {
 
             for (int user : intersection) {
                 //ratings.put(itemBased.get(item1).get(user),itemBased.get(item2).get(user));
-                float avg_rating = avgRating.get(user);
-                float item1_rating = itemBased.get(item1).get(user);
-                float item2_rating = itemBased.get(item2).get(user);
+                double avg_rating = avgRating.get(user);
+                double item1_rating = itemBased.get(item1).get(user);
+                double item2_rating = itemBased.get(item2).get(user);
 
                 numerator += ((item1_rating - avg_rating) * (item2_rating - avg_rating));
-                denominator_left += (float) Math.pow((item1_rating - avg_rating), 2);
-                denominator_right += (float) Math.pow((item2_rating - avg_rating), 2);
+                denominator_left += Math.pow((item1_rating - avg_rating), 2);
+                denominator_right += Math.pow((item2_rating - avg_rating), 2);
             }
-            denominator_left = (float) Math.sqrt(denominator_left);
-            denominator_right = (float) Math.sqrt(denominator_right);
+            denominator_left = Math.sqrt(denominator_left);
+            denominator_right = Math.sqrt(denominator_right);
 
             return (numerator / (denominator_left * denominator_right));
         }
 
         else {
-            return 0.0f;
+            return 0.0;
         }
     }
+
+    public void addDb(List<String[]> lines){
+        try{
+            Connection conn = this.connect();
+            String sql = "INSERT INTO sim_matrix(item1,item2,sim) VALUES(?,?,?)";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            conn.setAutoCommit(false);
+            int cnt = 0;
+            for (String[] line : lines){
+                pstmt.setInt(1,Integer.valueOf(line[0]));
+                pstmt.setInt(2,Integer.valueOf(line[1]));
+                pstmt.setFloat(3, Float.valueOf(line[2]));
+
+                pstmt.addBatch();
+                if (cnt==1000){
+                    pstmt.executeBatch();
+                    conn.commit();
+                    cnt=0;
+                }
+            }
+            if(cnt!=0){
+                pstmt.executeBatch();
+                conn.commit();
+            }
+            conn.setAutoCommit(true);
+            conn.close();
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+   public void itemIndex(){
+       List<Integer> items = new ArrayList<>(itemBased.keySet());
+       System.out.println("Index of 1242 "+ items.indexOf(1242));
+       System.out.println("Index of 36601 "+ items.indexOf(36601));
+   }
 
     public static void main (String[] args) {
         SimpleDB2 sdb = new SimpleDB2();
         sdb.loadRatings();
         sdb.getAvgRating();
         sdb.simMatrix();
+        //sdb.itemIndex();
 
     }
 }
