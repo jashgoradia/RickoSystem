@@ -25,7 +25,7 @@ public class test {
 
         if (result == -0.816){
             System.out.println("success");
-            
+
         }
 
         else {
@@ -87,27 +87,23 @@ public class test {
     }
 
 
-    public double cosineSimilarity(int item1, int item2) {
+    public double cosineSimilarity (int item1, int item2) {
 
         double numerator = 0.0;
         double denominator_left = 0.0;
         double denominator_right = 0.0;
 
-        HashSet<Integer> intersection = new HashSet<Integer>(itemBased.get(item1).keySet());
-        intersection.retainAll(itemBased.get(item2).keySet());
+        HashSet<Integer> user_set1 = new HashSet<Integer>(itemBased.get(item1).keySet());
+        //intersection.retainAll(itemBased.get(item2).keySet());
 
-
-        Iterator<Integer> value = intersection.iterator();
-        System.out.println("Statement 1");
-        while (value.hasNext()) {
-            System.out.println(value.next());
-            System.out.println("Statement 2");
-
+        Iterator<Integer> i = user_set1.iterator();
+        while (i.hasNext()) {
+            System.out.println(i.next());
         }
 
-        if (!(intersection.size() == 0)) {
-
-            for (int user : intersection) {
+        double result = 0.0;
+        for(int user: user_set1){
+            if(itemBased.get(item2).keySet().contains(user)) {
                 //ratings.put(itemBased.get(item1).get(user),itemBased.get(item2).get(user));
                 double avg_rating = avgRating.get(user);
                 double item1_rating = itemBased.get(item1).get(user);
@@ -117,15 +113,12 @@ public class test {
                 denominator_left += Math.pow((item1_rating - avg_rating), 2);
                 denominator_right += Math.pow((item2_rating - avg_rating), 2);
             }
-            denominator_left = Math.sqrt(denominator_left);
-            denominator_right = Math.sqrt(denominator_right);
-
-            return (numerator / (denominator_left * denominator_right));
-        } else {
-            return 0.0;
         }
+        denominator_left = Math.sqrt(denominator_left);
+        denominator_right = Math.sqrt(denominator_right);
 
-
+        result = (numerator / (denominator_left * denominator_right));
+        return result;
     }
 
 }
