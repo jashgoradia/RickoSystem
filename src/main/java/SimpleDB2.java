@@ -150,8 +150,8 @@ public class SimpleDB2 {
             for (int i = 0; i < sorted.keySet().size()-1; i++) {
                 for (int j = i + 1; j < sorted.keySet().size(); j++) {
                     double res = cosineSimilarity(items.get(i), items.get(j));
-                    res = Math.round(res * 100.0) / 100.0;
-                    if (res >= -1.00 && res <= 1.00 && res != 0.00) {
+                    //res = Math.round(res * 100.0) / 100.0;
+                    if (res >= -1 && res <= 1 && res != 0) {
 
                         //lines.add(new String[]{String.valueOf(item1),String.valueOf(item2),String.valueOf(res)});
                         pstmt.setInt(1, items.get(i));
