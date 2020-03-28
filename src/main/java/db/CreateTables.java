@@ -11,18 +11,24 @@ import java.sql.Statement;
  * @author sqlitetutorial.net
  */
 public class CreateTables {
+    String url;
+    public CreateTables() {
+        // SQLite connection string
+        String cwd = new File("").getAbsolutePath();
+        this.url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
+    }
 
-    // SQLite connection string
-    String cwd = new File("").getAbsolutePath();
-    public String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208.db";
+    public CreateTables(String url){
+        this.url = url;
+    }
     /**
      * Create a new table in the test database
      *
      */
-    public void createNewTable() {
+    public void createNewTable(String tableName) {
 
         // SQL statement for creating a new table
-        String sql = "CREATE TABLE training_dataset (\n"
+        String sql = "CREATE TABLE "+tableName+" (\n"
                 + "    id INTEGER PRIMARY KEY,\n"
                 + "    user_id integer NOT NULL,\n"
                 + "    item_id integer NOT NULL,\n"
@@ -33,8 +39,29 @@ public class CreateTables {
         try (Connection conn = DriverManager.getConnection(url);
              Statement stmt = conn.createStatement()) {
             // create a new table
-            stmt.execute("DROP TABLE IF EXISTS training_dataset");
+            stmt.execute("DROP TABLE IF EXISTS "+tableName);
             stmt.execute(sql);
+            conn.close();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void createTestTable(String tableName){
+        // SQL statement for creating a new table
+        String sql = "CREATE TABLE "+tableName+" (\n"
+            + "    id INTEGER PRIMARY KEY,\n"
+            + "    user_id integer NOT NULL,\n"
+            + "    item_id integer NOT NULL,\n"
+            + "    time_stamp integer NOT NULL\n"
+            + ");";
+
+        try (Connection conn = DriverManager.getConnection(url);
+             Statement stmt = conn.createStatement()) {
+            // create a new table
+            stmt.execute("DROP TABLE IF EXISTS "+tableName);
+            stmt.execute(sql);
+            conn.close();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -56,7 +83,7 @@ public class CreateTables {
             // create a new table
             stmt.execute("DROP TABLE IF EXISTS sim_matrix;");
             stmt.execute(sql);
-            stmt.close();
+            conn.close();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -69,7 +96,7 @@ public class CreateTables {
         //createNewTable();
         CreateTables ct = new CreateTables();
         //ct.createSimTable();
-        ct.createNewTable();
+        ct.createNewTable("training_dataset");
     }
 
 }

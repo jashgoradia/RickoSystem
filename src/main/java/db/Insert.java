@@ -11,37 +11,28 @@ import java.io.*;
  * @author sqlitetutorial.net
  */
 public class Insert {
-    String cwd = new File("").getAbsolutePath();
-    /**
-     * Connect to the test.db database
-     *
-     * @return the Connection object
-     */
-    private Connection connect() {
-        // SQLite connection string
-        //String cwd = new File("").getAbsolutePath();
-        String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208.db";
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(url);
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return conn;
+    String url;
+    String tableName;
+    public Insert(String url, String tableName){
+        this.url=url;
+        this.tableName=tableName;
     }
 
+    public Insert() {
+        String cwd = new File("").getAbsolutePath();
+        url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
+        tableName = "training_dataset";
+    }
 
-    public void insert() throws IOException{
+    public void insert(String csvFile) throws IOException{
 
-        //String cwd = new File("").getAbsolutePath();
-        //String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208.db";
-        String csvFile = cwd + "/sqlite/dataset/comp3208-train.csv";
         String line;
+        Connect c = new Connect();
 
-        String sql = "INSERT INTO training_dataset(user_id,item_id,rating,time_stamp) VALUES(?,?,?,?)";
+        String sql = "INSERT INTO "+tableName+" (user_id,item_id,rating,time_stamp) VALUES(?,?,?,?)";
 
         try {
-            Connection conn = this.connect();
+            Connection conn = c.connect(url);
              PreparedStatement pstmt = conn.prepareStatement(sql);
             conn.setAutoCommit(false);
             BufferedReader br = new BufferedReader(new FileReader(csvFile));
@@ -69,7 +60,35 @@ public class Insert {
                 int[] count = pstmt.executeBatch();
                 conn.commit();
             }*/
-            int[] count = pstmt.executeBatch();
+            pstmt.executeBatch();
+            conn.commit();
+            br.close();
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void insert_test(String csvFile)throws IOException{
+        String line;
+        Connect c = new Connect();
+
+        String sql = "INSERT INTO "+tableName+" (user_id,item_id,time_stamp) VALUES(?,?,?)";
+
+        try {
+            Connection conn = c.connect(url);
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            conn.setAutoCommit(false);
+            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+            while ((line = br.readLine()) != null) {
+                // use comma as separator
+                String[] values = line.split(",");
+                pstmt.setInt(1, Integer.parseInt(values[0]));
+                pstmt.setInt(2, Integer.parseInt(values[1]));
+                pstmt.setInt(3, Integer.parseInt(values[2]));
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
             conn.commit();
             br.close();
 
@@ -83,8 +102,20 @@ public class Insert {
      */
     public static void main(String[] args) throws IOException{
 
+        //training dataset
+        String cwd = new File("").getAbsolutePath();
+        /*String trainCsv = cwd + "/sqlite/dataset/comp3208-train.csv";
         Insert app = new Insert();
-        app.insert();
+        app.insert(trainCsv);*/
+
+        //test dataset
+        String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
+        String tableName = "testing_dataset";
+        CreateTables ct = new CreateTables(url);
+        ct.createTestTable(tableName);
+        String testCsv = cwd + "/sqlite/dataset/comp3208-test.csv";
+        Insert test_app = new Insert(url,tableName);
+        test_app.insert_test(testCsv);
     }
 
 }

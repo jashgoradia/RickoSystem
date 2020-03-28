@@ -19,11 +19,12 @@ public class CreateDb {
      * @param fileName the database file name
      */
     public static void createNewDatabase(String fileName) {
+        Connect c = new Connect();
 
         String cwd = new File("").getAbsolutePath();
         String url = "jdbc:sqlite:"+cwd + "/sqlite/db/" + fileName;
 
-        try (Connection conn = DriverManager.getConnection(url)) {
+        try (Connection conn = c.connect(url)) {
             if (conn != null) {
                 DatabaseMetaData meta = conn.getMetaData();
                 System.out.println("The driver name is " + meta.getDriverName());
@@ -40,8 +41,11 @@ public class CreateDb {
     public static void main(String[] args) throws IOException {
         createNewDatabase("comp3208.db");
         CreateTables ct = new CreateTables();
-        ct.createNewTable();
+        ct.createNewTable("training_dataset");
+
         Insert in = new Insert();
-        in.insert();
+        String cwd = new File("").getAbsolutePath();
+        String csvFile = cwd + "/sqlite/dataset/comp3208-train.csv";
+        in.insert(csvFile);
     }
 }

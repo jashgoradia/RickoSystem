@@ -1,15 +1,11 @@
-import com.opencsv.CSVWriter;
-import db.CreateTables;
-import db.Insert;
-import org.sqlite.SQLiteException;
+package simMatrix;
 
-import javax.swing.plaf.nimbus.State;
+import db.Connect;
+import db.CreateTables;
+
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.*;
 import java.util.*;
-import java.util.Map.Entry;
 
 import static java.util.Map.Entry.comparingByValue;
 import static java.util.stream.Collectors.toMap;
@@ -27,10 +23,22 @@ import static java.util.stream.Collectors.toMap;
  * @author Enrico Gerding
  *
  */
-public class SimpleDB2 {
-    String cwd = new File("").getAbsolutePath();
-    final String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
-    final String trainingset_tablename = "training_dataset";
+public class SimMatrix {
+    String url;
+    String trainingset_tablename;
+    public SimMatrix() {
+        String cwd = new File("").getAbsolutePath();
+        this.url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
+        this.trainingset_tablename = "training_dataset";
+    }
+
+    public SimMatrix(String url, String trainingset_tablename){
+        this.url=url;
+        this.trainingset_tablename=trainingset_tablename;
+    }
+
+    //object to establish connection to database
+    Connect c = new Connect();
     //public Connection conn;
     //private int nItems = itemCount();
     /**
@@ -44,7 +52,7 @@ public class SimpleDB2 {
     /**
      * Open an existing database.
      */
-    public Connection connect() {
+    /*public Connection connect() {
         try {
             Connection conn = DriverManager.getConnection(url);
             return conn;
@@ -52,7 +60,7 @@ public class SimpleDB2 {
             System.out.println(e.getMessage());
             return null;
         }
-    }
+    }*/
 
     /**
      * <p>
@@ -67,7 +75,7 @@ public class SimpleDB2 {
         int count = 0;
         String sql = "SELECT user_id, item_id, rating FROM " + trainingset_tablename;
         try {
-            Connection conn = this.connect();
+            Connection conn = c.connect(url);
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
 
@@ -111,8 +119,8 @@ public class SimpleDB2 {
 
     public void getAvgRating(){
         System.out.println("Calculating average rating");
-        String sql = "SELECT user_id, AVG(rating) FROM training_dataset GROUP BY user_id";
-        try(Connection conn = this.connect();
+        String sql = "SELECT user_id, AVG(rating) FROM "+trainingset_tablename+" GROUP BY user_id";
+        try(Connection conn = c.connect(url);
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql)){
             int count = 0;
@@ -134,14 +142,14 @@ public class SimpleDB2 {
 
     public void simMatrix(){
         System.out.println("Calculating sim matrix");
-        CreateTables ct = new CreateTables();
+        CreateTables ct = new CreateTables(url);
         ct.createSimTable();
         List<Integer> items = new ArrayList<>(sorted.keySet());
 
         String sql = "INSERT INTO sim_matrix(item1,item2,sim) VALUES(?,?,?)";
 
         try {
-            Connection conn = this.connect();
+            Connection conn = c.connect(url);
             PreparedStatement pstmt = conn.prepareStatement(sql);
             conn.setAutoCommit(false);
             int counter = 0;
@@ -219,9 +227,9 @@ public class SimpleDB2 {
         return result;
     }
 
-    public void addDb(List<String[]> lines){
+   /* public void addDb(List<String[]> lines){
         try{
-            Connection conn = this.connect();
+            Connection conn = c.connect(url);
             String sql = "INSERT INTO sim_matrix(item1,item2,sim) VALUES(?,?,?)";
             PreparedStatement pstmt = conn.prepareStatement(sql);
             conn.setAutoCommit(false);
@@ -247,7 +255,7 @@ public class SimpleDB2 {
         }catch (SQLException e){
             System.out.println(e.getMessage());
         }
-    }
+    }*/
 
    public void itemIndex(){
        List<Integer> items = new ArrayList<>(itemBased.keySet());
@@ -256,11 +264,11 @@ public class SimpleDB2 {
    }
 
     public void checkSize() {
-        System.out.println(itemBased.keySet().size()-sorted.keySet().size());
+       System.out.println(itemBased.keySet().size()-sorted.keySet().size());
     }
 
     public static void main (String[] args) {
-        SimpleDB2 sdb = new SimpleDB2();
+        SimMatrix sdb = new SimMatrix();
         sdb.loadRatings();
         sdb.setSorted();
         sdb.checkSize();
