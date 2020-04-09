@@ -157,17 +157,24 @@ public class SimMatrix {
 
             for (int i = 0; i < sorted.keySet().size()-1; i++) {
                 for (int j = i + 1; j < sorted.keySet().size(); j++) {
-                    double res = cosineSimilarity(items.get(i), items.get(j));
+                    Float res = cosineSimilarity(items.get(i), items.get(j));
                     //res = Math.round(res * 100.0) / 100.0;
                     if (res >= -1 && res <= 1 && res != 0) {
 
                         //lines.add(new String[]{String.valueOf(item1),String.valueOf(item2),String.valueOf(res)});
                         pstmt.setInt(1, items.get(i));
                         pstmt.setInt(2, items.get(j));
-                        pstmt.setDouble(3, res);
+                        pstmt.setFloat(3, res);
 
                         pstmt.addBatch();
-                        counter++;
+
+                        pstmt.setInt(1,items.get(j));
+                        pstmt.setInt(2,items.get(i));
+                        pstmt.setFloat(3,res);
+
+                        pstmt.addBatch();
+
+                        counter+=2;
 
                         if (counter == 100000) {
                             pstmt.executeBatch();
@@ -198,7 +205,7 @@ public class SimMatrix {
 
     }
 
-    public double cosineSimilarity (int item1, int item2) {
+    public Float cosineSimilarity (int item1, int item2) {
 
         double numerator = 0.0;
         double denominator_left = 0.0;
@@ -224,7 +231,7 @@ public class SimMatrix {
         denominator_right = Math.sqrt(denominator_right);
 
         result = (numerator / (denominator_left * denominator_right));
-        return result;
+        return (float)result;
     }
 
    /* public void addDb(List<String[]> lines){
