@@ -27,14 +27,13 @@ public class CreateValidationDB {
         ct.createSimTable();
 
         //populate tables
-        cvdb.readRatings();
+        cvdb.readRatings(url);
     }
 
-    public void readRatings(){
+    public void readRatings(String url){
         Connect c = new Connect();
         String cwd = new File("").getAbsolutePath();
-        String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208_test.db";
-        String csvFile = cwd + "/sqlite/dataset/comp3208-train.csv";
+        String csvFile = cwd + "/sqlite/dataset/comp3208-train-small.csv";
         String line;
         String training = "newTrainingSet";
         String testing = "newTestingSet";

@@ -104,17 +104,18 @@ public class Insert {
 
         //training dataset
         String cwd = new File("").getAbsolutePath();
-        /*String trainCsv = cwd + "/sqlite/dataset/comp3208-train.csv";
-        Insert app = new Insert();
-        app.insert(trainCsv);*/
+        String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208_small.db";
+
+        String trainCsv = cwd + "/sqlite/dataset/comp3208-train-small.csv";
+        Insert app = new Insert(url,"training_dataset");
+        app.insert(trainCsv);
 
         //test dataset
-        String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
-        String tableName = "testing_dataset";
-        CreateTables ct = new CreateTables(url);
-        ct.createTestTable(tableName);
-        String testCsv = cwd + "/sqlite/dataset/comp3208-test.csv";
-        Insert test_app = new Insert(url,tableName);
+
+        /*CreateTables ct = new CreateTables(url);
+        ct.createTestTable(tableName);*/
+        String testCsv = cwd + "/sqlite/dataset/comp3208-test-small.csv";
+        Insert test_app = new Insert(url,"testing_dataset");
         test_app.insert_test(testCsv);
     }
 

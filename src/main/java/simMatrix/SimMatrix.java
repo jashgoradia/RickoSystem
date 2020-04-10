@@ -5,6 +5,8 @@ import db.CreateTables;
 
 import java.io.File;
 import java.sql.*;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.*;
 
 import static java.util.Map.Entry.comparingByValue;
@@ -280,7 +282,11 @@ public class SimMatrix {
         sdb.setSorted();
         sdb.checkSize();
         sdb.getAvgRating();
+        LocalTime start = LocalTime.now();
+        System.out.println(start);
         sdb.simMatrix();
+        LocalTime end = LocalTime.now();
+        System.out.println("Time elapsed: "+Duration.between(start,end).toMinutes()+" minutes.");
         //sdb.itemIndex();
 
     }

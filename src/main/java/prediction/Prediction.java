@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.*;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -149,6 +150,7 @@ public class Prediction {
             while(rs.next()){
                 try {
                     avgItemRating.put(rs.getInt(1), rs.getFloat(2));
+                    count++;
                 } catch (NullPointerException e){
                     flag++;
                     System.out.println(flag);
@@ -167,6 +169,9 @@ public class Prediction {
         List<String[]> preds = new ArrayList<>();
         int items_count = 0;
         int row_count = 0;
+        int random_count = 0;
+        int item_average_count = 0;
+        int user_average_count = 0;
 
         for(int item:test_set.keySet()){
             HashMap<Integer,Float> neighbourhood = getNeighbourhood(item);
@@ -176,16 +181,18 @@ public class Prediction {
                 if((items.contains(item)==false && data.containsKey(user)==false) || neighbourhood==null){
                     Random r = new Random();
                     prediction = toNearestPoint5((r.nextInt(10)+1)/2);
+                    random_count++;
                 }
                 else if(items.contains(item)==false){
                     prediction = toNearestPoint5(avgUserRating.get(user));
+                    user_average_count++;
                 }
                 else if(data.containsKey(user)==false){
                     prediction = toNearestPoint5(avgItemRating.get(item));
+                    item_average_count++;
                 }
                 else {
                     Set<Integer> neighbours = data.get(user).keySet();
-                    row_count++;
                     float numerator =0f;
                     float denominator = 0f;
                     //TODO could add neighbour lower and upper limit
@@ -199,14 +206,24 @@ public class Prediction {
                     }
                     prediction=numerator/denominator;
                 }
+                row_count++;
                 preds.add(new String[]{String.valueOf(user), String.valueOf(item), String.valueOf(toNearestPoint5(prediction))});
-                if (preds.size() >= 100000) { //TODO not sure if 100,000 writes are good
+                if (preds.size() >= 10000) { //TODO not sure if 100,000 writes are good
                     writeToCsv(preds);
                     preds.clear();
                 }
                 System.out.println("Items: "+ items_count+ ", Row: "+row_count);
             }
         }
+        if(!preds.isEmpty()){
+            writeToCsv(preds);
+            preds.clear();
+        }
+        int coldstart= random_count+user_average_count+item_average_count;
+        System.out.println("Total rows affected by cold start: " + coldstart);
+        System.out.println("Total random predictions (both user and item missing): " + random_count);
+        System.out.println("Total average user rating predicted (only item missing): "+ user_average_count);
+        System.out.println("Total average item rating predicted (only user missing): "+ item_average_count);
     }
 
     public float toNearestPoint5(float value){
@@ -224,7 +241,7 @@ public class Prediction {
         String path = cwd+"/sqlite/dataset/prediction.csv";
         File file = new File(path);
         try{
-            FileWriter outputfile = new FileWriter(file);
+            FileWriter outputfile = new FileWriter(file,true);
             CSVWriter writer = new CSVWriter(outputfile,',',CSVWriter.NO_QUOTE_CHARACTER,CSVWriter.DEFAULT_ESCAPE_CHARACTER,CSVWriter.DEFAULT_LINE_END);
             writer.writeAll(preds);
 
@@ -269,9 +286,10 @@ public class Prediction {
         p.itemList();
         p.loadAvgUserRating();
         p.loadAvgItemRating();
-        System.out.println(LocalTime.now());
+        LocalTime start = LocalTime.now();
+        System.out.println(start);
         p.predictionCalc();
-        System.out.println(LocalTime.now());
-        //
+        LocalTime end = LocalTime.now();
+        System.out.println("Time elapsed: " + Duration.between(start,end).toMinutes()+ " minutes.");
     }
 }

@@ -1,5 +1,7 @@
 package db;
 
+import com.sun.xml.internal.fastinfoset.tools.FI_DOM_Or_XML_DOM_SAX_SAXEvent;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -39,13 +41,15 @@ public class CreateDb {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
-        createNewDatabase("comp3208.db");
-        CreateTables ct = new CreateTables();
+        createNewDatabase("comp3208_small.db");
+        String cwd= new File("").getAbsolutePath();
+        String url = "jdbc:sqlite:"+cwd+"/sqlite/db/comp3208_small.db";
+        CreateTables ct = new CreateTables(url);
         ct.createNewTable("training_dataset");
+        ct.createTestTable("testing_dataset");
 
-        Insert in = new Insert();
-        String cwd = new File("").getAbsolutePath();
+        /*Insert in = new Insert();
         String csvFile = cwd + "/sqlite/dataset/comp3208-train.csv";
-        in.insert(csvFile);
+        in.insert(csvFile);*/
     }
 }
