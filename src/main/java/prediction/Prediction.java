@@ -10,20 +10,26 @@ import java.sql.*;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Map.Entry.comparingByValue;
 
 public class Prediction {
     String tableName;
     String url;
     String training_table;
+    String csvPath;
+
     Map<Integer,List<Integer>> test_set = new TreeMap<>();
     Map<Integer,TreeMap<Integer,Float>> data = new TreeMap<>();
-    TreeMap<Integer,Float> avgItemRating = new TreeMap<>();
-    TreeMap<Integer,Float> avgUserRating = new TreeMap<>();
+    HashMap<Integer,Float> avgItemRating = new HashMap<>();
+    HashMap<Integer,Float> avgUserRating = new HashMap<>();
     Set<Integer> items = new HashSet<>();
-    public Prediction(String url,String tableName,String training_table){
+    public Prediction(String url,String tableName,String training_table, String csvPath){
         this.tableName=tableName;
         this.url=url;
         this.training_table=training_table;
+        this.csvPath = csvPath;
     }
 
     public void loadData() {
@@ -122,13 +128,8 @@ public class Prediction {
             ResultSet rs = stmt.executeQuery(sql)){
             int flag = 0;
             while(rs.next()){
-                try {
-                    avgUserRating.put(rs.getInt(1), rs.getFloat(2));
-                    count++;
-                } catch (NullPointerException e){
-                    flag++;
-                    System.out.println(flag);
-                }
+                avgUserRating.put(rs.getInt(1), rs.getFloat(2));
+                count++;
             }
             conn.close();
             stmt.close();
@@ -140,21 +141,15 @@ public class Prediction {
 
     public void loadAvgItemRating(){
         System.out.println("Calculating average item rating");
-        String sql = "SELECT item_id, AVG(rating) FROM "+training_table+" WHERE item_id IN (SELECT DISTINCT item_id FROM "+tableName+") GROUP BY item_id";
+        String sql = "SELECT item_id, AVG(rating) FROM "+training_table+" GROUP BY item_id";
         Connect c = new Connect();
         int count=0;
         try(Connection conn = c.connect(url);
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql)){
-            int flag = 0;
             while(rs.next()){
-                try {
-                    avgItemRating.put(rs.getInt(1), rs.getFloat(2));
-                    count++;
-                } catch (NullPointerException e){
-                    flag++;
-                    System.out.println(flag);
-                }
+                avgItemRating.put(rs.getInt(1), rs.getFloat(2));
+                count++;
             }
             conn.close();
             stmt.close();
@@ -164,7 +159,8 @@ public class Prediction {
         System.out.println("Loaded average ratings for "+count+" items.");
     }
 
-    public void predictionCalc(){
+    public void predictionCalc(int k_max,int k_min, float threshold){
+        LocalTime start = LocalTime.now();
         System.out.println("-----Predicting-----");
         List<String[]> preds = new ArrayList<>();
         int items_count = 0;
@@ -172,47 +168,69 @@ public class Prediction {
         int random_count = 0;
         int item_average_count = 0;
         int user_average_count = 0;
+        int avg_count = 0;
 
         for(int item:test_set.keySet()){
-            HashMap<Integer,Float> neighbourhood = getNeighbourhood(item);
+            HashMap<Integer,Float> neighbourhood = getNeighbourhood(item,threshold);
             items_count++;
             for(int user:test_set.get(item)){
-                float prediction = 0f;
-                if((items.contains(item)==false && data.containsKey(user)==false) || neighbourhood==null){
-                    Random r = new Random();
-                    prediction = toNearestPoint5((r.nextInt(10)+1)/2);
-                    random_count++;
-                }
-                else if(items.contains(item)==false){
-                    prediction = toNearestPoint5(avgUserRating.get(user));
+                float prediction;
+                if(items.contains(item)==false&&data.containsKey(user)){
+                    prediction = (avgUserRating.get(user));
                     user_average_count++;
                 }
-                else if(data.containsKey(user)==false){
-                    prediction = toNearestPoint5(avgItemRating.get(item));
+                else if((items.contains(item)==false && data.containsKey(user)==false)){
+                    prediction = random();
+                    random_count++;
+                }
+                else if(data.containsKey(user)==false||neighbourhood.isEmpty()){
+                    prediction = (avgItemRating.get(item));
                     item_average_count++;
                 }
                 else {
                     Set<Integer> neighbours = data.get(user).keySet();
+                    //int k_max = 50;
+                    //int k_min = 5;
+                    LinkedHashMap<Integer,Float> sorted_neighbours = neighbourhood.entrySet()
+                        .stream()
+                        .filter(map->data.get(user).containsKey(map.getKey()))
+                        .sorted(Map.Entry.<Integer,Float>comparingByValue(Comparator.comparingDouble(Math::abs)).reversed())
+                        .limit(k_max)
+                        .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,(e1,e2)->e1,LinkedHashMap::new));
                     float numerator =0f;
                     float denominator = 0f;
                     //TODO could add neighbour lower and upper limit
-                    for (int neighbour : neighbours) {
-                        if (neighbourhood.containsKey(neighbour)) { //TODO separate the prediction calc to a separate method
+                    if(sorted_neighbours.keySet().size()>=k_min) {
+                        for (int neighbour : sorted_neighbours.keySet()) {
+                            //if(neighbourhood.containsKey(neighbour)) {
                             float rating = data.get(user).get(neighbour);
+                            float avg_rating = avgItemRating.get(neighbour);
                             float sim = neighbourhood.get(neighbour);
-                            numerator+=(sim*rating);
-                            denominator+=(sim);
+                            numerator += (sim * (rating - avg_rating));
+                            //numerator += (sim*rating);
+                            denominator += Math.abs(sim);
+                            //}
                         }
                     }
-                    prediction=numerator/denominator;
+                    if(denominator!=0f){
+                        prediction = avgItemRating.get(item)+(numerator / denominator);
+                        //prediction = numerator/denominator;
+                    }
+                    else {
+                        prediction=(avgUserRating.get(user)+avgItemRating.get(item))/2;
+                        avg_count++;
+                    }
                 }
                 row_count++;
-                preds.add(new String[]{String.valueOf(user), String.valueOf(item), String.valueOf(toNearestPoint5(prediction))});
-                if (preds.size() >= 10000) { //TODO not sure if 100,000 writes are good
+                preds.add(new String[]{String.valueOf(user), String.valueOf(item), String.valueOf(prediction)});
+                if (preds.size() >= 10000) {
                     writeToCsv(preds);
                     preds.clear();
                 }
-                System.out.println("Items: "+ items_count+ ", Row: "+row_count);
+            }
+            System.out.println("Items: "+ items_count+ ", Row: "+row_count);
+            if(items_count%1000==0){
+                System.out.println("Time elapsed: "+ Duration.between(start,LocalTime.now()).toMinutes()+" minutes.");
             }
         }
         if(!preds.isEmpty()){
@@ -221,25 +239,20 @@ public class Prediction {
         }
         int coldstart= random_count+user_average_count+item_average_count;
         System.out.println("Total rows affected by cold start: " + coldstart);
+        System.out.println("Total rows affected by not enough neighbours: "+ avg_count);
         System.out.println("Total random predictions (both user and item missing): " + random_count);
         System.out.println("Total average user rating predicted (only item missing): "+ user_average_count);
         System.out.println("Total average item rating predicted (only user missing): "+ item_average_count);
     }
 
-    public float toNearestPoint5(float value){
-        float newValue = (float) (0.5*Math.round(value*2));
-        if(newValue==0){
-            newValue=0.5f;
-        }
-        return newValue;
+    public float random(){
+        Random r = new Random();
+        return ((r.nextInt(9)/2)+0.5f);
     }
 
 
     public void writeToCsv(List<String[]> preds){
-        System.out.println("-----Writing to CSV-----");
-        String cwd = new File("").getAbsolutePath();
-        String path = cwd+"/sqlite/dataset/prediction.csv";
-        File file = new File(path);
+        File file = new File(csvPath);
         try{
             FileWriter outputfile = new FileWriter(file,true);
             CSVWriter writer = new CSVWriter(outputfile,',',CSVWriter.NO_QUOTE_CHARACTER,CSVWriter.DEFAULT_ESCAPE_CHARACTER,CSVWriter.DEFAULT_LINE_END);
@@ -251,8 +264,9 @@ public class Prediction {
         }
     }
 
-    public HashMap<Integer,Float> getNeighbourhood (int item){
-        String sql= "SELECT item2,sim FROM sim_matrix where item1 = ? and sim>0"; //TODO could add threshold as a parameter
+    public HashMap<Integer,Float> getNeighbourhood (int item,float threshold){
+        //float threshold = 0f;
+        String sql= "SELECT item2,sim FROM sim_matrix where item1 = ? and sim>" +threshold+";"; //TODO could add threshold as a parameter
 
         Connect c = new Connect();
         HashMap<Integer,Float> result = new HashMap<>();
@@ -279,7 +293,8 @@ public class Prediction {
     public static void main(String args[]){
         String cwd = new File("").getAbsolutePath();
         String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
-        Prediction p = new Prediction(url,"testing_dataset","training_dataset");
+        String csvPath = cwd+"/sqlite/dataset/prediction_large.csv";
+        Prediction p = new Prediction(url,"testing_dataset","training_dataset",csvPath);
         System.out.println(LocalTime.now());
         p.loadData();
         p.loadTrainData();
@@ -288,7 +303,10 @@ public class Prediction {
         p.loadAvgItemRating();
         LocalTime start = LocalTime.now();
         System.out.println(start);
-        p.predictionCalc();
+        int k_max = 50;
+        int k_min = 5;
+        float threshold = 0f;
+        p.predictionCalc(k_max,k_min,threshold);
         LocalTime end = LocalTime.now();
         System.out.println("Time elapsed: " + Duration.between(start,end).toMinutes()+ " minutes.");
     }

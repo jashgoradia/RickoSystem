@@ -41,15 +41,12 @@ public class SimMatrix {
 
     //object to establish connection to database
     Connect c = new Connect();
-    //public Connection conn;
-    //private int nItems = itemCount();
     /**
      * The data is stored in a HashMap, which allows fast access.
      */
     private HashMap<Integer, HashMap<Integer,Float>>itemBased;
     private HashMap<Integer,Float>avgRating = new HashMap<>();
     private LinkedHashMap<Integer,HashMap<Integer,Float>> sorted;
-    //private HashMap<Integer, Float>avgRating;
 
     /**
      * Open an existing database.

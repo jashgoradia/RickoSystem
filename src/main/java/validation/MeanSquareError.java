@@ -28,7 +28,7 @@ public class MeanSquareError {
         this.csvPath = csvPath;
     }
     public static void main(String args[]){
-        String tableName = "newTestingSet";
+        String tableName = "testing_dataset";
         String cwd = new File("").getAbsolutePath();
         String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208_test.db";
         String csvPath = cwd+"/sqlite/dataset/prediction.csv";
@@ -82,17 +82,28 @@ public class MeanSquareError {
     public void calculateMSE(){
         int accessed = 0;
         double mse =0;
+        double mae = 0;
+        int count=1;
         for(String[] row:allPredictions){
-            int user = Integer.valueOf(row[0]);
-            int item = Integer.valueOf(row[1]);
-            float prediction = Float.valueOf(row[2]);
 
-            accessed++;
-            float rating = data.get(user).get(item);
-            mse += Math.pow((rating-prediction),2);
+            //if(count>942575) {
+                int user = Integer.valueOf(row[0]);
+                int item = Integer.valueOf(row[1]);
+                float prediction = Float.valueOf(row[2]);
+
+                accessed++;
+                float rating = data.get(user).get(item);
+                mse += Math.pow((rating - prediction), 2);
+                mae += Math.abs(rating - prediction);
+            /*}
+            else
+                count++;*/
         }
         mse = mse/accessed;
+        mae = mae/accessed;
         System.out.println("Rows accessed = " + accessed);
         System.out.println("Mean Square Error = "+mse);
+        System.out.println("Mean Absolute Error = "+mae);
+        System.out.println("Root Mean Square Error = "+Math.sqrt(mse));
     }
 }

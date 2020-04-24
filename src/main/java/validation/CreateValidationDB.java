@@ -22,8 +22,8 @@ public class CreateValidationDB {
 
         //create DB and Tables
         cdb.createNewDatabase("comp3208_test.db");
-        ct.createNewTable("newTrainingSet");
-        ct.createNewTable("newTestingSet");
+        ct.createNewTable("training_dataset");
+        ct.createNewTable("testing_dataset");
         ct.createSimTable();
 
         //populate tables
@@ -35,15 +35,15 @@ public class CreateValidationDB {
         String cwd = new File("").getAbsolutePath();
         String csvFile = cwd + "/sqlite/dataset/comp3208-train-small.csv";
         String line;
-        String training = "newTrainingSet";
-        String testing = "newTestingSet";
+        String training = "training_dataset";
+        String testing = "testing_dataset";
 
         //input 1 in 10 into validation set
         int ratio = 10;
         int counter = 0;
 
-        String sqlTrain = "INSERT INTO newTrainingSet (user_id,item_id,rating,time_stamp) VALUES(?,?,?,?)";
-        String sqlTest = "INSERT INTO newTestingSet (user_id,item_id,rating,time_stamp) VALUES(?,?,?,?)";
+        String sqlTrain = "INSERT INTO "+training+" (user_id,item_id,rating,time_stamp) VALUES(?,?,?,?)";
+        String sqlTest = "INSERT INTO "+testing+" (user_id,item_id,rating,time_stamp) VALUES(?,?,?,?)";
 
         try{
             Connection conn = c.connect(url);
@@ -55,7 +55,6 @@ public class CreateValidationDB {
 
             while((line = br.readLine())!=null){
                 String[] values = line.split(",");
-                counter++;
                 if(counter%ratio==0){
                     pstmtTest.setInt(1,Integer.valueOf(values[0]));
                     pstmtTest.setInt(2,Integer.valueOf(values[1]));
@@ -78,6 +77,7 @@ public class CreateValidationDB {
                     pstmtTrain.setInt(4,Integer.valueOf(values[3]));
                     pstmtTrain.addBatch();
                 }
+                counter++;
             }
             //commit to db
             pstmtTest.executeBatch();

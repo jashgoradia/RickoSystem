@@ -9,7 +9,7 @@ import java.time.LocalTime;
 public class NewSimMatrix {
     public static void main(String args[]){
         String cwd = new File("").getAbsolutePath();
-        String url = "jdbc:sqlite:"+cwd + "/sqlite/db/comp3208_small.db";
+        String url = "jdbc:sqlite:"+cwd + "/sqlite/db/comp3208_test.db";
 
         SimMatrix sm = new SimMatrix(url,"training_dataset");
         sm.loadRatings();
