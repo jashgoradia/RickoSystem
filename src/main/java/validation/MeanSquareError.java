@@ -31,7 +31,7 @@ public class MeanSquareError {
         String tableName = "testing_dataset";
         String cwd = new File("").getAbsolutePath();
         String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208_test.db";
-        String csvPath = cwd+"/sqlite/dataset/prediction.csv";
+        String csvPath = cwd+"/sqlite/dataset/benchmark.csv";
         MeanSquareError mse = new MeanSquareError(tableName,url,csvPath);
 
         mse.loadTestSet();
