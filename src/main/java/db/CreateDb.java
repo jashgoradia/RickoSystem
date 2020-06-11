@@ -16,6 +16,9 @@ import java.io.File;
 public class CreateDb {
 
     /**
+     * code adopted from hhtps://www.sqlitetutorial.net/sqlite-java
+     */
+    /**
      * Connect to a sample database
      *
      * @param fileName the database file name

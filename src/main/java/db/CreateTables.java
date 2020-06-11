@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
+ * code adopted from https://www.sqlitetutorial.net/sqlite-java
  *
  * @author sqlitetutorial.net
  */

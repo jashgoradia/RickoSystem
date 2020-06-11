@@ -257,7 +257,7 @@ public class BenchmarkModel {
 
     public static void main(String args[]){
         String cwd = new File("").getAbsolutePath();
-        String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208.db";
+        String url = "jdbc:sqlite:" + cwd + "/sqlite/db/comp3208_test.db";
         String csvPath = cwd+"/sqlite/dataset/benchmark.csv";
         BenchmarkModel bm = new BenchmarkModel(url,"testing_dataset","training_dataset",csvPath);
         System.out.println(LocalTime.now());

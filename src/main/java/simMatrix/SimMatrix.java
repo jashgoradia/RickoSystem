@@ -12,19 +12,6 @@ import java.util.*;
 import static java.util.Map.Entry.comparingByValue;
 import static java.util.stream.Collectors.toMap;
 
-/**
- * A few simple database manipulations using the SQLite4Java wrapper for the
- * Recommender System coursework.
- *
- * It assumes that a database exists which is named "comp3208.db" and this
- * database is already loaded with all the training data set into a table called
- * "TRAININGSET", which is assumed to have the following columns: "UserID",
- * "ItemID" and "Rating" Note that SQL is largely case insensitive (except the
- * data itself if these are strings).
- *
- * @author Enrico Gerding
- *
- */
 public class SimMatrix {
     String url;
     String trainingset_tablename;
@@ -47,10 +34,6 @@ public class SimMatrix {
     private HashMap<Integer, HashMap<Integer,Float>>itemBased;
     private HashMap<Integer,Float>avgRating = new HashMap<>();
     private LinkedHashMap<Integer,HashMap<Integer,Float>> sorted;
-
-    /**
-     * Open an existing database.
-     */
     /*public Connection connect() {
         try {
             Connection conn = DriverManager.getConnection(url);
@@ -60,7 +43,11 @@ public class SimMatrix {
             return null;
         }
     }*/
-
+    /**
+     *
+     * @author Enrico Gerding
+     *f
+     */
     /**
      * <p>
      * The data is loaded into a HashMap where the key is the user, and the

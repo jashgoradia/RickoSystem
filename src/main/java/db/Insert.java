@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.io.*;
 
 /**
- *
+ * code adopted from https://www.sqlitetutorial.net/sqlite-java
  * @author sqlitetutorial.net
  */
 public class Insert {

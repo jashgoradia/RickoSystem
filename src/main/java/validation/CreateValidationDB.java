@@ -30,6 +30,10 @@ public class CreateValidationDB {
         cvdb.readRatings(url);
     }
 
+    /**
+     * Logic of splitting sets adopted from @author Enrico Gerding's code
+     * @param url
+     */
     public void readRatings(String url){
         Connect c = new Connect();
         String cwd = new File("").getAbsolutePath();
