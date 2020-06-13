@@ -5,3 +5,5 @@
 target/
 *.zip
 Extras/
+*.ipynb
+
